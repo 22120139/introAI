@@ -28,111 +28,110 @@ GREEN = (0, 255, 0)
 font = pygame.font.SysFont("arial", 24)
 title_font = pygame.font.SysFont("arial", 36)
 
-def draw_maze(maze, pacman, ghosts, score, level):
-    screen.fill(BLACK)
+# Sounds
+try:
+    eat_dot_sound = pygame.mixer.Sound("sounds/eat_dot.wav")
+    game_over_sound = pygame.mixer.Sound("sounds/game_over.wav")
+except FileNotFoundError:
+    eat_dot_sound = None
+    game_over_sound = None
 
+def draw_maze(maze, pacman, ghosts, score, level):
+    """Draw the maze, Pac-Man, ghosts, dots, walls, score, and level."""
+    screen.fill(BLACK)
     # Draw dots
     for dot in maze.dots:
         pygame.draw.circle(screen, WHITE, 
-                         (dot[0] * CELL_SIZE + CELL_SIZE//2, 
-                          dot[1] * CELL_SIZE + CELL_SIZE//2), 
-                         CELL_SIZE//8)
-
+                          (dot[0] * CELL_SIZE + CELL_SIZE//2, 
+                           dot[1] * CELL_SIZE + CELL_SIZE//2), 
+                          CELL_SIZE//8)
     # Draw walls
     for y in range(maze.height):
         for x in range(maze.width):
             if maze.is_wall((x, y)):
                 pygame.draw.rect(screen, WALL_COLOR, 
-                               (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
+                                (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     # Draw Pac-Man
     pygame.draw.circle(screen, YELLOW, 
                       (pacman.position[0] * CELL_SIZE + CELL_SIZE//2, 
                        pacman.position[1] * CELL_SIZE + CELL_SIZE//2), 
                       CELL_SIZE//2 - 2)
-
     # Draw ghosts
     for ghost in ghosts:
         pygame.draw.circle(screen, ghost.color, 
                           (ghost.position[0] * CELL_SIZE + CELL_SIZE//2, 
                            ghost.position[1] * CELL_SIZE + CELL_SIZE//2), 
                           CELL_SIZE//2 - 2)
-
     # Draw score and level
     score_text = font.render(f"Score: {score}", True, WHITE)
     level_text = font.render(f"Level: {level}", True, WHITE)
     screen.blit(score_text, (10, 10))
     screen.blit(level_text, (10, 40))
-
     pygame.display.flip()
 
 def draw_game_over(score, level):
+    """Display game over screen with final score and level."""
     screen.fill(BLACK)
     game_over_text = title_font.render("Game Over!", True, RED)
     score_text = font.render(f"Final Score: {score}", True, WHITE)
     level_text = font.render(f"Level Reached: {level}", True, WHITE)
     restart_text = font.render("Press R to Restart or Q to Quit", True, WHITE)
-    
     screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//2 - 70))
     screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2 - 20))
     screen.blit(level_text, (WIDTH//2 - level_text.get_width()//2, HEIGHT//2 + 20))
     screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 70))
-    
     pygame.display.flip()
 
 def draw_level_selection():
+    """Display level selection screen."""
     screen.fill(BLACK)
-    
     title = title_font.render("PAC-MAN SEARCH ALGORITHMS", True, YELLOW)
     subtitle = font.render("Select a level to start:", True, WHITE)
-    
-    level1 = font.render("1. Blue Ghost (BFS) - Pac-Man fixed", True, BLUE)
-    level2 = font.render("2. Pink Ghost (DFS) - Pac-Man fixed", True, PINK)
-    level3 = font.render("3. Orange Ghost (UCS) - Pac-Man fixed", True, ORANGE)
-    level4 = font.render("4. Red Ghost (A*) - Pac-Man fixed", True, RED)
-    level5 = font.render("5. All Ghosts - Pac-Man fixed", True, WHITE)
+    level1 = font.render("1. Blue Ghost (BFS) - Pac-Man stationary", True, BLUE)
+    level2 = font.render("2. Pink Ghost (DFS) - Pac-Man stationary", True, PINK)
+    level3 = font.render("3. Orange Ghost (UCS) - Pac-Man stationary", True, ORANGE)
+    level4 = font.render("4. Red Ghost (A*) - Pac-Man stationary", True, RED)
+    level5 = font.render("5. All Ghosts - Pac-Man stationary", True, WHITE)
     level6 = font.render("6. All Ghosts - Player controls Pac-Man", True, GREEN)
-    
     screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
     screen.blit(subtitle, (WIDTH//2 - subtitle.get_width()//2, 120))
-    
     screen.blit(level1, (WIDTH//2 - level1.get_width()//2, 180))
     screen.blit(level2, (WIDTH//2 - level2.get_width()//2, 220))
     screen.blit(level3, (WIDTH//2 - level3.get_width()//2, 260))
     screen.blit(level4, (WIDTH//2 - level4.get_width()//2, 300))
     screen.blit(level5, (WIDTH//2 - level5.get_width()//2, 340))
     screen.blit(level6, (WIDTH//2 - level6.get_width()//2, 380))
-    
     pygame.display.flip()
 
 def initialize_game(level):
+    """Initialize game state for the given level."""
     maze = Maze(20, 20)
     pacman = PacMan((1, 1))
     score = 0
     ghosts = []
-    pacman_controlled = (level == 6)  # Only controllable in level 6
+    pacman_controlled = (level == 6)
     
     if level == 1:
-        ghosts.append(Ghost(maze, (10, 10), pacman, bfs, BLUE))
+        ghosts.append(Ghost(maze, (10, 10), pacman.position, bfs, BLUE))
     elif level == 2:
-        ghosts.append(Ghost(maze, (10, 10), pacman, dfs, PINK))
+        ghosts.append(Ghost(maze, (10, 10), pacman.position, dfs, PINK))
     elif level == 3:
-        ghosts.append(Ghost(maze, (10, 10), pacman, ucs, ORANGE))
+        ghosts.append(Ghost(maze, (10, 10), pacman.position, ucs, ORANGE))
     elif level == 4:
-        ghosts.append(Ghost(maze, (10, 10), pacman, a_star, RED))
+        ghosts.append(Ghost(maze, (10, 10), pacman.position, a_star, RED))
     elif level == 5:
         ghosts.extend([
-            Ghost(maze, (10, 10), pacman, bfs, BLUE),
-            Ghost(maze, (10, 1), pacman, dfs, PINK),
-            Ghost(maze, (1, 10), pacman, ucs, ORANGE),
-            Ghost(maze, (5, 5), pacman, a_star, RED)
+            Ghost(maze, (10, 10), pacman.position, bfs, BLUE),
+            Ghost(maze, (10, 1), pacman.position, dfs, PINK),
+            Ghost(maze, (1, 10), pacman.position, ucs, ORANGE),
+            Ghost(maze, (5, 5), pacman.position, a_star, RED)
         ])
     elif level == 6:
         ghosts.extend([
-            Ghost(maze, (10, 10), pacman, bfs, BLUE),
-            Ghost(maze, (10, 1), pacman, dfs, PINK),
-            Ghost(maze, (1, 10), pacman, ucs, ORANGE),
-            Ghost(maze, (5, 5), pacman, a_star, RED)
+            Ghost(maze, (10, 10), pacman.position, bfs, BLUE),
+            Ghost(maze, (10, 1), pacman.position, dfs, PINK),
+            Ghost(maze, (1, 10), pacman.position, ucs, ORANGE),
+            Ghost(maze, (5, 5), pacman.position, a_star, RED)
         ])
     
     for ghost in ghosts:
@@ -141,21 +140,38 @@ def initialize_game(level):
     return maze, pacman, ghosts, score, pacman_controlled
 
 def main():
+    """Main game loop for Pac-Man Search Algorithms."""
+    # Run performance tests if --test flag is provided
+    if '--test' in sys.argv:
+        maze = Maze(20, 20)
+        algorithms = {
+            'BFS': bfs,
+            'DFS': dfs,
+            'UCS': ucs,
+            'A*': a_star
+        }
+        results = run_tests(maze, algorithms)
+        print_results(results)
+        pygame.quit()
+        sys.exit()
+
+    # Initialize game state
     current_level = 0  # 0 means level selection screen
     maze = None
     pacman = None
     ghosts = []
     score = 0
     game_over = False
-    running = True
     pacman_controlled = False
-    
+    running = True
+
     while running:
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if current_level == 0:
+                if current_level == 0:  # Level selection
                     if event.key == pygame.K_1:
                         current_level = 1
                         maze, pacman, ghosts, score, pacman_controlled = initialize_game(1)
@@ -176,16 +192,17 @@ def main():
                         maze, pacman, ghosts, score, pacman_controlled = initialize_game(6)
                     elif event.key == pygame.K_q:
                         running = False
-                elif game_over:
+                elif game_over:  # Game over screen
                     if event.key == pygame.K_r:
                         current_level = 0
                         game_over = False
                         for ghost in ghosts:
                             ghost.stop()
                             ghost.join()
+                        ghosts = []
                     elif event.key == pygame.K_q:
                         running = False
-                elif pacman_controlled:  # Only handle movement in level 6
+                elif pacman_controlled:  # Pac-Man movement (level 6)
                     old_position = pacman.position
                     if event.key == pygame.K_UP:
                         pacman.move((0, -1), maze)
@@ -195,28 +212,39 @@ def main():
                         pacman.move((-1, 0), maze)
                     elif event.key == pygame.K_RIGHT:
                         pacman.move((1, 0), maze)
-                    
+                    # Check for eating dots
                     if pacman.position in maze.dots:
                         maze.dots.remove(pacman.position)
                         score += 10
-        
+                        if eat_dot_sound:
+                            eat_dot_sound.play()
+
+        # Update game state
         if current_level == 0:
             draw_level_selection()
         else:
             if not game_over:
-                # Continuous collision check
+                # Update ghost goals to chase Pac-Man
+                for ghost in ghosts:
+                    ghost.goal = pacman.position
+                # Check for collisions
                 for ghost in ghosts:
                     if pacman.position == ghost.position:
                         game_over = True
+                        if game_over_sound:
+                            game_over_sound.play()
                         break
-            
-            if game_over:
-                draw_game_over(score, current_level)
-            else:
+                # Draw game
                 draw_maze(maze, pacman, ghosts, score, current_level)
-        
-        clock.tick(10)
-    
+            else:
+                draw_game_over(score, current_level)
+
+        # Control frame rate (20 FPS for level 6, 15 FPS for others)
+        if current_level == 6:
+            clock.tick(20)
+        else:
+            clock.tick(15)
+
     # Clean up
     for ghost in ghosts:
         ghost.stop()

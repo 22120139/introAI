@@ -6,7 +6,7 @@ from collections import deque
 
 class Ghost(threading.Thread):
     def __init__(self, maze, start, goal, algorithm, color):
-        threading.Thread.__init__(self)
+        super().__init__()
         self.maze = maze
         self.position = start
         self.goal = goal
@@ -15,36 +15,49 @@ class Ghost(threading.Thread):
         self.path = []
         self.running = True
         self.daemon = True
-        self.last_goal = None  # Lưu mục tiêu trước đó để kiểm tra thay đổi
+        self.last_goal = None
+        self.lock = threading.Lock()  # Tránh conflict đa luồng
 
     def run(self):
         while self.running:
-            # Tính toán lại đường đi nếu mục tiêu thay đổi hoặc không có đường đi
-            if self.goal != self.last_goal or not self.path:
-                self.last_goal = self.goal
-                if self.goal != self.position:
-                    self.path = self.algorithm(self.maze, self.position, self.goal)
+            with self.lock:
+                # Nếu mục tiêu thay đổi hoặc path không còn hợp lệ thì tính lại
+                if self.goal != self.last_goal or not self.path:
+                    self.last_goal = self.goal
+                    if self.goal != self.position:
+                        new_path = self.algorithm(self.maze, self.position, self.goal)
+                        # Nếu thuật toán không tìm được đường, ghost sẽ random
+                        if new_path and len(new_path) > 1:
+                            self.path = new_path
+                        else:
+                            self.path = []
+
+                # Di chuyển nếu có đường đi
+                if self.path and len(self.path) > 1:
+                    next_pos = self.path[1]
+                    # Kiểm tra lại tính hợp lệ (tường có thể thay đổi)
+                    if not self.maze.is_wall(next_pos):
+                        self.position = next_pos
+                        self.path = self.path[1:]
+                    else:
+                        # Nếu vị trí tiếp theo là tường, reset lại đường
+                        self.path = []
                 else:
-                    self.path = None
-            
-            # Di chuyển theo đường đi nếu có
-            if self.path and len(self.path) > 1:
-                next_pos = self.path[1]
-                if not self.maze.is_wall(next_pos):
-                    self.position = next_pos
-                    self.path = self.path[1:]
-                else:
-                    self.path = None  # Reset nếu đường đi không hợp lệ
-            else:
-                # Di chuyển ngẫu nhiên nếu không có đường đi
-                neighbors = self.maze.get_valid_moves(self.position)
-                if neighbors:
-                    self.position = random.choice(neighbors)
-                self.path = None
-            
-            time.sleep(0.3)  # Làm chậm ma quỷ để game dễ hơn (trước là 0.05)
+                    # Di chuyển ngẫu nhiên nếu không có đường hợp lệ
+                    neighbors = self.maze.get_valid_moves(self.position)
+                    if neighbors:
+                        self.position = random.choice(neighbors)
+                    self.path = []
+
+            time.sleep(0.3)  # Delay để ghost không di chuyển quá nhanh
+
+    def update_goal(self, new_goal):
+        """Cập nhật mục tiêu mới an toàn."""
+        with self.lock:
+            self.goal = new_goal
 
     def stop(self):
+        """Dừng thread ghost."""
         self.running = False
 
 # Search Algorithms
