@@ -37,7 +37,7 @@ except FileNotFoundError:
     game_over_sound = None
 
 def draw_maze(maze, pacman, ghosts, score, level):
-    """Draw the maze, Pac-Man, ghosts, dots, walls, score, and level."""
+    """Draw the maze, Pac-Man, ghosts, dots, walls, score, level, and quit instruction."""
     screen.fill(BLACK)
     # Draw dots
     for dot in maze.dots:
@@ -67,6 +67,9 @@ def draw_maze(maze, pacman, ghosts, score, level):
     level_text = font.render(f"Level: {level}", True, WHITE)
     screen.blit(score_text, (10, 10))
     screen.blit(level_text, (10, 40))
+    # Draw quit instruction
+    quit_text = font.render("Press Q to Quit", True, WHITE)
+    screen.blit(quit_text, (WIDTH - quit_text.get_width() - 10, 10))
     pygame.display.flip()
 
 def draw_game_over(score, level):
@@ -111,6 +114,7 @@ def initialize_game(level):
     ghosts = []
     pacman_controlled = (level == 6)
     
+    # Tạo ma quỷ trước
     if level == 1:
         ghosts.append(Ghost(maze, (10, 10), pacman.position, bfs, BLUE))
     elif level == 2:
@@ -134,7 +138,9 @@ def initialize_game(level):
             Ghost(maze, (5, 5), pacman.position, a_star, RED)
         ])
     
+    # Truyền danh sách ghosts vào mỗi Ghost để kiểm tra chồng nhau
     for ghost in ghosts:
+        ghost.ghosts = ghosts
         ghost.start()
     
     return maze, pacman, ghosts, score, pacman_controlled
@@ -200,24 +206,41 @@ def main():
                             ghost.stop()
                             ghost.join()
                         ghosts = []
+                        maze = None
+                        pacman = None
+                        score = 0
+                        pacman_controlled = False
                     elif event.key == pygame.K_q:
                         running = False
-                elif pacman_controlled:  # Pac-Man movement (level 6)
-                    old_position = pacman.position
-                    if event.key == pygame.K_UP:
-                        pacman.move((0, -1), maze)
-                    elif event.key == pygame.K_DOWN:
-                        pacman.move((0, 1), maze)
-                    elif event.key == pygame.K_LEFT:
-                        pacman.move((-1, 0), maze)
-                    elif event.key == pygame.K_RIGHT:
-                        pacman.move((1, 0), maze)
-                    # Check for eating dots
-                    if pacman.position in maze.dots:
-                        maze.dots.remove(pacman.position)
-                        score += 10
-                        if eat_dot_sound:
-                            eat_dot_sound.play()
+                else:  # In-game
+                    if event.key == pygame.K_q:
+                        # Return to level selection menu
+                        current_level = 0
+                        game_over = False
+                        for ghost in ghosts:
+                            ghost.stop()
+                            ghost.join()
+                        ghosts = []
+                        maze = None
+                        pacman = None
+                        score = 0
+                        pacman_controlled = False
+                    elif pacman_controlled:  # Pac-Man movement (level 6)
+                        old_position = pacman.position
+                        if event.key == pygame.K_UP:
+                            pacman.move((0, -1), maze)
+                        elif event.key == pygame.K_DOWN:
+                            pacman.move((0, 1), maze)
+                        elif event.key == pygame.K_LEFT:
+                            pacman.move((-1, 0), maze)
+                        elif event.key == pygame.K_RIGHT:
+                            pacman.move((1, 0), maze)
+                        # Check for eating dots
+                        if pacman.position in maze.dots:
+                            maze.dots.remove(pacman.position)
+                            score += 10
+                            if eat_dot_sound:
+                                eat_dot_sound.play()
 
         # Update game state
         if current_level == 0:
