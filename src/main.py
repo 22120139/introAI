@@ -28,6 +28,32 @@ GREEN = (0, 255, 0)
 font = pygame.font.SysFont("arial", 24)
 title_font = pygame.font.SysFont("arial", 36)
 
+# Load and scale Pac-Man image
+try:
+    pacman_image = pygame.image.load("images/pacman.png").convert_alpha()
+    # Scale image to match the size of the original Pac-Man (CELL_SIZE - 4 to match the circle size)
+    pacman_image = pygame.transform.scale(pacman_image, (CELL_SIZE - 4, CELL_SIZE - 4))
+except FileNotFoundError:
+    pacman_image = None
+    print("Pac-Man image not found, falling back to default circle.")
+
+# Load ghost images (scaled to fit CELL_SIZE - 4)
+def load_ghost_image(filename):
+    try:
+        img = pygame.image.load(f"images/{filename}").convert_alpha()
+        return pygame.transform.scale(img, (CELL_SIZE - 4, CELL_SIZE - 4))
+    except FileNotFoundError:
+        print(f"{filename} not found, using colored circle fallback.")
+        return None
+
+ghost_images = {
+    BLUE: load_ghost_image("blue_ghost.png"),
+    PINK: load_ghost_image("pink_ghost.png"),
+    ORANGE: load_ghost_image("orange_ghost.png"),
+    RED: load_ghost_image("red_ghost.png"),
+}
+
+
 # Sounds
 try:
     eat_dot_sound = pygame.mixer.Sound("sounds/eat_dot.wav")
@@ -52,21 +78,39 @@ def draw_maze(maze, pacman, ghosts, score, level):
                 pygame.draw.rect(screen, WALL_COLOR, 
                                 (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
     # Draw Pac-Man
-    pygame.draw.circle(screen, YELLOW, 
-                      (pacman.position[0] * CELL_SIZE + CELL_SIZE//2, 
-                       pacman.position[1] * CELL_SIZE + CELL_SIZE//2), 
-                      CELL_SIZE//2 - 2)
+    if pacman_image:
+        # Calculate position to center the image
+        pacman_rect = pacman_image.get_rect(center=(
+            pacman.position[0] * CELL_SIZE + CELL_SIZE//2,
+            pacman.position[1] * CELL_SIZE + CELL_SIZE//2
+        ))
+        screen.blit(pacman_image, pacman_rect)
+    else:
+        # Fallback to default circle if image is not available
+        pygame.draw.circle(screen, YELLOW, 
+                          (pacman.position[0] * CELL_SIZE + CELL_SIZE//2, 
+                           pacman.position[1] * CELL_SIZE + CELL_SIZE//2), 
+                          CELL_SIZE//2 - 2)
     # Draw ghosts
     for ghost in ghosts:
-        pygame.draw.circle(screen, ghost.color, 
-                          (ghost.position[0] * CELL_SIZE + CELL_SIZE//2, 
-                           ghost.position[1] * CELL_SIZE + CELL_SIZE//2), 
-                          CELL_SIZE//2 - 2)
+        ghost_img = ghost_images.get(ghost.color)
+        if ghost_img:
+            ghost_rect = ghost_img.get_rect(center=(
+                ghost.position[0] * CELL_SIZE + CELL_SIZE // 2,
+                ghost.position[1] * CELL_SIZE + CELL_SIZE // 2
+            ))
+            screen.blit(ghost_img, ghost_rect)
+        else:
+            pygame.draw.circle(screen, ghost.color,
+                            (ghost.position[0] * CELL_SIZE + CELL_SIZE // 2,
+                            ghost.position[1] * CELL_SIZE + CELL_SIZE // 2),
+                            CELL_SIZE // 2 - 2)
+
     # Draw score and level
     score_text = font.render(f"Score: {score}", True, WHITE)
     level_text = font.render(f"Level: {level}", True, WHITE)
-    screen.blit(score_text, (10, 10))
-    screen.blit(level_text, (10, 40))
+    screen.blit(score_text, (655, 40))
+    screen.blit(level_text, (655, 70))
     # Draw quit instruction
     quit_text = font.render("Press Q to Quit", True, WHITE)
     screen.blit(quit_text, (WIDTH - quit_text.get_width() - 10, 10))
