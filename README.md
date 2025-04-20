@@ -33,7 +33,7 @@ Dự án được tổ chức như saui:
     ```
     Sau đó, tìm tới thư mục chứa file main.py, tiến hành cài đặt các thư viện cần thiết bằng lệnh
     ```bash
-    pip install requirements.txt
+    pip install -r requirements.txt
     ```
     Hoặc có thể cài đặt thủ công
     ```bash
@@ -51,7 +51,7 @@ Dự án được tổ chức như saui:
 2.  **Cách 2:**
     Giải nén file zip được gửi trên moodle, sau đó, tìm tới thư mục chứa file main.py, tiến hành cài đặt các thư viện cần thiết bằng lệnh
     ```bash
-    pip install requirements.txt
+    pip install -r requirements.txt
     ```
     Hoặc có thể cài đặt thủ công
     ```bash
